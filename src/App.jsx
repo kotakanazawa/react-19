@@ -1,50 +1,31 @@
-import { useState } from 'react';
-import { updateNameInDB } from './apis/updateNameInDB';
+import { useActionState } from "react"
+import { updateNameInDB } from "./apis/updateNameInDB"
 
 function App() {
-  const [name, setName] = useState(
-    () => JSON.parse(localStorage.getItem("name")) || "Anonymous user"
-  );
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [name, actionFunction, isPending] = useActionState(
+    updateName, // 非同期関数
+    JSON.parse(localStorage.getItem("name")) || "Anonymous user" // 初期値
+  )
 
-  if (loading) {
-    return <p>Loading...</p>;
-  }
-
-  if (error) {
-    return <p>Something went wrong.</p>;
-  }
-
-  async function formAction(formData) {
-    setLoading(true);
-    setError(null);
+  async function updateName(formData) {
     try {
-      const newName = await updateNameInDB(formData.get("name"));
-      setName(newName);
+      const newName = await updateNameInDB(formData.get("name"))
+      return newName
     } catch (error) {
-      console.error(error);
-      setError(error)
+      console.error(error.message)
     }
-    setLoading(false);
   }
 
   return (
     <>
-      <p>
-        Current user: {name}
-      </p>
-
-      <form action={formAction}>
-        <input
-          type="text"
-          name="name"
-          required
-        />
-        <button type='submit'>Update</button>
+      <p>Current user: {name}</p>
+      {isPending && <p>Updating name...</p>}
+      <form action={actionFunction}>
+        <input type="text" name="name" required />
+        <button type="submit">Update</button>
       </form>
     </>
   )
 }
 
-export default App;
+export default App
